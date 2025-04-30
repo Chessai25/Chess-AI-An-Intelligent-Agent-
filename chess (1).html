@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chess Game (Fixed Movement)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
+            border: 2px solid #333;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .square {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .light {
+            background-color: #f0d9b5;
+        }
+        
+        .dark {
+            background-color: #b58863;
+        }
+        
+        .selected {
+            background-color: rgba(100, 255, 100, 0.5);
+        }
+        
+        .valid-move {
+            background-color: rgba(100, 255, 100, 0.3);
+        }
+        
+        #controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 480px;
+        }
+        
+        #status {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        #move-input {
+            display: flex;
+            gap: 10px;
+        }
+        
+        input {
+            flex-grow: 1;
+            padding: 8px;
+            font-size: 16px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Chess Game (Human vs AI)</h1>
+        <div id="board"></div>
+        <div id="controls">
+            <div id="status">White's turn</div>
+            <div id="move-input">
+                <input type="text" id="move" placeholder="Enter move (e.g. e2e4)" />
+                <button id="submit">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chess symbols
+        const PIECES = {
+            'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
+            'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
+        };
+
+        // Initial board setup
+        const initialBoard = [
+            ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+            ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+            [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+            [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+            [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+            [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+            ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+            ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+        ];
+
+        class ChessGame {
+            constructor() {
+                this.board = JSON.parse(JSON.stringify(initialBoard));
+                this.currentPlayer = 'white';
+                this.selectedSquare = null;
+                this.validMoves = [];
+                this.gameOver = false;
+                this.status = "White's turn";
+                this.initBoard();
+                this.setupEventListeners();
+            }
+
+            initBoard() {
+                const boardElement = document.getElementById('board');
+                boardElement.innerHTML = '';
+                
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const square = document.createElement('div');
+                        square.className = `square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+                        square.dataset.row = row;
+                        square.dataset.col = col;
+                        
+                        const piece = this.board[row][col];
+                        if (piece !== ' ') {
+                            square.textContent = PIECES[piece];
+                            square.style.color = piece === piece.toLowerCase() ? 'black' : 'white';
+                        }
+                        
+                        boardElement.appendChild(square);
+                    }
+                }
+                this.updateStatus();
+            }
+
+            updateStatus() {
+                document.getElementById('status').textContent = this.status;
+            }
+
+            setupEventListeners() {
+                document.querySelectorAll('.square').forEach(square => {
+                    square.addEventListener('click', () => this.handleSquareClick(square));
+                });
+                
+                document.getElementById('submit').addEventListener('click', () => this.handleMoveSubmit());
+                document.getElementById('move').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.handleMoveSubmit();
+                });
+            }
+
+            handleSquareClick(square) {
+                if (this.gameOver || this.currentPlayer === 'black') return;
+                
+                const row = parseInt(square.dataset.row);
+                const col = parseInt(square.dataset.col);
+                const piece = this.board[row][col];
+                
+                // If clicking on your own piece
+                if (piece !== ' ' && 
+                    ((this.currentPlayer === 'white' && piece === piece.toUpperCase()) || 
+                     (this.currentPlayer === 'black' && piece === piece.toLowerCase()))) {
+                    this.selectedSquare = [row, col];
+                    this.validMoves = this.getValidMoves(row, col);
+                    this.highlightSquares();
+                } 
+                // If clicking on a valid move square
+                else if (this.selectedSquare && this.isValidMove(this.selectedSquare[0], this.selectedSquare[1], row, col)) {
+                    this.makeMove(this.selectedSquare[0], this.selectedSquare[1], row, col);
+                    this.selectedSquare = null;
+                    this.validMoves = [];
+                    this.highlightSquares();
+                    
+                    // AI move
+                    if (!this.gameOver && this.currentPlayer === 'black') {
+                        setTimeout(() => this.aiMove(), 500);
+                    }
+                }
+            }
+
+            handleMoveSubmit() {
+                if (this.gameOver || this.currentPlayer === 'black') return;
+                
+                const moveInput = document.getElementById('move').value.toLowerCase();
+                if (moveInput.length < 4) {
+                    this.status = "Invalid move format (e.g. e2e4)";
+                    this.updateStatus();
+                    return;
+                }
+
+                const startCol = moveInput[0];
+                const startRow = moveInput[1];
+                const endCol = moveInput[2];
+                const endRow = moveInput[3];
+                const promotion = moveInput.length > 4 ? moveInput[4] : null;
+
+                // Convert to array indices
+                const fromCol = startCol.charCodeAt(0) - 'a'.charCodeAt(0);
+                const fromRow = 8 - parseInt(startRow);
+                const toCol = endCol.charCodeAt(0) - 'a'.charCodeAt(0);
+                const toRow = 8 - parseInt(endRow);
+
+                // Validate coordinates
+                if (fromRow < 0 || fromRow > 7 || fromCol < 0 || fromCol > 7 ||
+                    toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) {
+                    this.status = "Invalid coordinates";
+                    this.updateStatus();
+                    return;
+                }
+
+                const piece = this.board[fromRow][fromCol];
+                if (piece === ' ' || (this.currentPlayer === 'white' && piece !== piece.toUpperCase())) {
+                    this.status = "Not your piece!";
+                    this.updateStatus();
+                    return;
+                }
+
+                if (!this.isValidMove(fromRow, fromCol, toRow, toCol)) {
+                    this.status = "Invalid move!";
+                    this.updateStatus();
+                    return;
+                }
+
+                this.makeMove(fromRow, fromCol, toRow, toCol, promotion);
+                document.getElementById('move').value = '';
+                
+                if (!this.gameOver && this.currentPlayer === 'black') {
+                    setTimeout(() => this.aiMove(), 500);
+                }
+            }
+
+            highlightSquares() {
+                document.querySelectorAll('.square').forEach(square => {
+                    square.classList.remove('selected', 'valid-move');
+                });
+                
+                if (this.selectedSquare) {
+                    const [row, col] = this.selectedSquare;
+                    const square = document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`);
+                    square.classList.add('selected');
+                    
+                    this.validMoves.forEach(([r, c]) => {
+                        const moveSquare = document.querySelector(`.square[data-row="${r}"][data-col="${c}"]`);
+                        moveSquare.classList.add('valid-move');
+                    });
+                }
+            }
+
+            isValidMove(fromRow, fromCol, toRow, toCol) {
+                const piece = this.board[fromRow][fromCol];
+                if (piece === ' ') return false;
+                
+                // Check if destination has piece of same color
+                const targetPiece = this.board[toRow][toCol];
+                if (targetPiece !== ' ') {
+                    const sameColor = (piece === piece.toUpperCase() && targetPiece === targetPiece.toUpperCase()) ||
+                                     (piece === piece.toLowerCase() && targetPiece === targetPiece.toLowerCase());
+                    if (sameColor) return false;
+                }
+                
+                const pieceLower = piece.toLowerCase();
+                const dx = toCol - fromCol;
+                const dy = toRow - fromRow;
+
+                // Pawn moves
+                if (pieceLower === 'p') {
+                    const direction = piece === 'P' ? -1 : 1;
+                    
+                    // Forward move
+                    if (dx === 0) {
+                        // Single move
+                        if (dy === direction && this.board[toRow][toCol] === ' ') return true;
+                        // Double move from starting position
+                        const startRow = piece === 'P' ? 6 : 1;
+                        if (fromRow === startRow && dy === 2 * direction && 
+                            this.board[fromRow + direction][fromCol] === ' ' && 
+                            this.board[toRow][toCol] === ' ') return true;
+                    }
+                    // Capture
+                    else if (Math.abs(dx) === 1 && dy === direction && this.board[toRow][toCol] !== ' ') {
+                        return true;
+                    }
+                    return false;
+                }
+                // Knight moves
+                else if (pieceLower === 'n') {
+                    return (Math.abs(dx) === 2 && Math.abs(dy) === 1) || 
+                           (Math.abs(dx) === 1 && Math.abs(dy) === 2);
+                }
+                // Bishop moves
+                else if (pieceLower === 'b') {
+                    if (Math.abs(dx) !== Math.abs(dy)) return false;
+                    const stepX = dx > 0 ? 1 : -1;
+                    const stepY = dy > 0 ? 1 : -1;
+                    let x = fromCol + stepX;
+                    let y = fromRow + stepY;
+                    while (x !== toCol || y !== toRow) {
+                        if (this.board[y][x] !== ' ') return false;
+                        x += stepX;
+                        y += stepY;
+                    }
+                    return true;
+                }
+                // Rook moves
+                else if (pieceLower === 'r') {
+                    if (dx !== 0 && dy !== 0) return false;
+                    const stepX = dx === 0 ? 0 : (dx > 0 ? 1 : -1);
+                    const stepY = dy === 0 ? 0 : (dy > 0 ? 1 : -1);
+                    let x = fromCol + stepX;
+                    let y = fromRow + stepY;
+                    while (x !== toCol || y !== toRow) {
+                        if (this.board[y][x] !== ' ') return false;
+                        x += stepX;
+                        y += stepY;
+                    }
+                    return true;
+                }
+                // Queen moves
+                else if (pieceLower === 'q') {
+                    // Like bishop or rook
+                    if (Math.abs(dx) === Math.abs(dy)) {
+                        const stepX = dx > 0 ? 1 : -1;
+                        const stepY = dy > 0 ? 1 : -1;
+                        let x = fromCol + stepX;
+                        let y = fromRow + stepY;
+                        while (x !== toCol || y !== toRow) {
+                            if (this.board[y][x] !== ' ') return false;
+                            x += stepX;
+                            y += stepY;
+                        }
+                        return true;
+                    } else if (dx === 0 || dy === 0) {
+                        const stepX = dx === 0 ? 0 : (dx > 0 ? 1 : -1);
+                        const stepY = dy === 0 ? 0 : (dy > 0 ? 1 : -1);
+                        let x = fromCol + stepX;
+                        let y = fromRow + stepY;
+                        while (x !== toCol || y !== toRow) {
+                            if (this.board[y][x] !== ' ') return false;
+                            x += stepX;
+                            y += stepY;
+                        }
+                        return true;
+                    }
+                    return false;
+                }
+                // King moves
+                else if (pieceLower === 'k') {
+                    return Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
+                }
+
+                return false;
+            }
+
+            makeMove(fromRow, fromCol, toRow, toCol, promotion = null) {
+                // Move the piece
+                const piece = this.board[fromRow][fromCol];
+                this.board[toRow][toCol] = piece;
+                this.board[fromRow][fromCol] = ' ';
+                
+                // Pawn promotion
+                if ((piece === 'P' && toRow === 0) || (piece === 'p' && toRow === 7)) {
+                    const color = piece === 'P' ? 'Q' : 'q';
+                    this.board[toRow][toCol] = promotion ? promotion.toUpperCase() : color;
+                }
+                
+                // Switch player
+                this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
+                this.status = `${this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1)}'s turn`;
+                
+                this.initBoard(); // Refresh the board
+            }
+
+            aiMove() {
+                // Simple AI: find all valid moves and pick one randomly
+                const validMoves = [];
+                
+                for (let fromRow = 0; fromRow < 8; fromRow++) {
+                    for (let fromCol = 0; fromCol < 8; fromCol++) {
+                        const piece = this.board[fromRow][fromCol];
+                        if (piece !== ' ' && piece === piece.toLowerCase()) { // Black pieces
+                            for (let toRow = 0; toRow < 8; toRow++) {
+                                for (let toCol = 0; toCol < 8; toCol++) {
+                                    if (this.isValidMove(fromRow, fromCol, toRow, toCol)) {
+                                        validMoves.push([fromRow, fromCol, toRow, toCol]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (validMoves.length > 0) {
+                    const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+                    this.makeMove(randomMove[0], randomMove[1], randomMove[2], randomMove[3]);
+                } else {
+                    // No valid moves - checkmate or stalemate
+                    this.gameOver = true;
+                    this.status = this.isCheck('black') ? "White wins by checkmate!" : "Stalemate!";
+                    this.updateStatus();
+                }
+            }
+
+            getValidMoves(row, col) {
+                const moves = [];
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        if (this.isValidMove(row, col, r, c)) {
+                            moves.push([r, c]);
+                        }
+                    }
+                }
+                return moves;
+            }
+
+            isCheck(color) {
+                // Find the king's position
+                let kingRow, kingCol;
+                const king = color === 'white' ? 'K' : 'k';
+                
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        if (this.board[row][col] === king) {
+                            kingRow = row;
+                            kingCol = col;
+                            break;
+                        }
+                    }
+                }
+                
+                // Check if any opponent piece can attack the king
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const piece = this.board[row][col];
+                        if (piece !== ' ' && 
+                            ((color === 'white' && piece === piece.toLowerCase()) || 
+                             (color === 'black' && piece === piece.toUpperCase()))) {
+                            if (this.isValidMove(row, col, kingRow, kingCol)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                
+                return false;
+            }
+        }
+
+        // Initialize the game
+        document.addEventListener('DOMContentLoaded', () => {
+            new ChessGame();
+        });
+    </script>
+</body>
+</html>

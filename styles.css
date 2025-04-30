@@ -1,0 +1,111 @@
+/* General Styles */
+body {
+    font-family: 'Poppins', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: url('chess2.avif') no-repeat center center/cover;
+}
+
+/* Welcome Animation */
+.welcome-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    opacity: 0;
+    animation: welcomeAnimation 2s ease-in-out forwards;
+}
+
+.welcome-message h1 {
+    font-size: 4rem;
+    color: white; /* White text for visibility */
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7); /* Shadow for better contrast */
+}
+
+@keyframes welcomeAnimation {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* Main Content Container */
+.container {
+    text-align: center;
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+    backdrop-filter: blur(10px); /* Frosted glass effect */
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    animation: fadeIn 1s ease-in-out 2s forwards;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Text Styles */
+h1 {
+    font-size: 2.8rem;
+    color: white; /* White for college name */
+    margin: 10px 0;
+    font-weight: 600;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+h2 {
+    font-size: 2rem;
+    color: white; /* White for team name */
+    margin: 10px 0;
+    font-weight: 500;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+p {
+    font-size: 1.4rem;
+    color: #ddd; /* Light gray for description */
+    margin: 20px 0 10px;
+}
+
+/* Project Link Styles */
+a {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 20px;
+    padding: 12px 24px;
+    background-color: #007BFF; /* Blue for the link */
+    color: white; /* White text for contrast */
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    font-size: 1.2rem;
+}
+
+a:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+    transform: translateY(-2px); /* Slight lift on hover */
+}
+
+a i {
+    margin-right: 8px;
+}
