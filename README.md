@@ -1,7 +1,7 @@
 
 # ♟️ Chess AI – Goal-Based Agent Model
 
-An AI-powered Chess Game leveraging the **Minimax algorithm with Alpha-Beta Pruning**, built with Python and visualized using Pygame and HTML/CSS.
+An AI-powered Chess Game leveraging the  built with Python and visualized using Pygame and HTML/CSS.
 
 ---
 
@@ -14,8 +14,6 @@ This project implements a chess game using **goal-based agents**, a fundamental 
 ## 🔍 Features
 
 - **Goal-Based AI Agent**: Makes decisions based on objectives like checkmating the opponent, capturing pieces, and board control.
-- **Minimax Algorithm**: Simulates game states to evaluate the best possible move.
-- **Alpha-Beta Pruning**: Optimizes decision-making speed by pruning unnecessary branches in the search tree.
 - **Heuristic Evaluation Function**: Scores board states to guide the AI's choices.
 - **Turn-Based Play**: Supports human vs AI with proper alternating turns.
 - **Web Prototype**: Optional HTML/CSS chessboard layout for UI prototyping.
@@ -38,9 +36,7 @@ This project implements a chess game using **goal-based agents**, a fundamental 
 |--------------|--------------------------------------------|
 | `Python`     | Core game logic and AI computations        |
 | `Pygame`     | Rendering the game interface               |
-| `HTML/CSS`   | Chessboard and piece design (prototype UI) |
-| `Minimax`    | AI decision-making                         |
-| `Alpha-Beta` | Minimax optimization to prune search trees |
+| `HTML/CSS`   | Chessboard and piece design (prototype UI) ||
 
 ---
 ## 🛠️ Installation Guide
@@ -94,8 +90,7 @@ pip install -r requirements.txt
 1. Initialize game state
 2. Player makes a move
 3. AI evaluates all valid responses
-4. AI uses Minimax + Alpha-Beta pruning to decide its move
-5. Update board and repeat until checkmate/draw
+4. Update board and repeat until checkmate/draw
 
 ---
 
@@ -115,9 +110,6 @@ pip install -r requirements.txt
 - Shweta Datey  
 - Archita Raghuwanshi  
 - Komal Gongale  
-- Gauri Charjan  
-- Shreyal Yeole  
-- Divya Bhagwat  
 
 ---
 
