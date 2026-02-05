@@ -109,7 +109,8 @@ pip install -r requirements.txt
 
 - Shweta Datey  
 - Archita Raghuwanshi  
-- Komal Gongale  
+- Komal Gongale
+- Gauri Charjan  
 
 ---
 
